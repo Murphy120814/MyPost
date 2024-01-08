@@ -1,32 +1,37 @@
-import React from "react";
-import { useSelector } from "react-redux";
-import { selectAllPosts } from "../slices/postsSlice";
-import PostsAuthor from "./PostsAuthor";
-import PostTimeAgo from "./PostTimeAgo";
-import PostReactions from "./PostReactions";
-function PostsList() {
-  const posts = useSelector(selectAllPosts);
-  const orderedList = posts
-    .slice()
-    .sort((a, b) => b.date.localeCompare(a.date));
-  const renderedPosts = (
-    <article>
-      {orderedList.map((post) => (
-        <article key={post.id} className=" w-full border border-green-400 p-2">
-          <h1>{post.title}</h1>
-          <p>{post.content.slice(0, 100)}</p>
-          <p>
-            <PostsAuthor userId={post.userId} />
-          </p>
-          <p>
-            <PostTimeAgo timeStamp={post.date} />
-          </p>
+import React, { useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import {
+  selectAllPosts,
+  getPostStatus,
+  getError,
+  fetchPost,
+} from "../slices/postsSlice";
+import IndividualPost from "./IndividualPost";
 
-          <PostReactions post={post} />
-        </article>
-      ))}
-    </article>
-  );
+function PostsList() {
+  const dispatch = useDispatch();
+  const posts = useSelector(selectAllPosts);
+  const status = useSelector(getPostStatus);
+  const error = useSelector(getError);
+  useEffect(() => {
+    if (status == "idle") {
+      dispatch(fetchPost());
+    }
+  }, []);
+  let renderedPosts;
+  if (status == "loading") {
+    renderedPosts = <p>Loading data ...</p>;
+  }
+  if (status == "success") {
+    const orderedList = posts
+      .slice()
+      .sort((a, b) => b.date.localeCompare(a.date));
+    renderedPosts = <IndividualPost orderedList={orderedList} />;
+  }
+  if (status === "failed") {
+    renderedPosts = <p>{error}</p>;
+  }
+
   return (
     <section className=" mx-auto w-9/12 p-4 lg:w-4/12">
       Your Posts.
